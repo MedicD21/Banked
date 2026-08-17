@@ -10,6 +10,35 @@ export interface BudgetCategory {
   period: string;
 }
 
+export interface LedgerEntry {
+  id: string;
+  entryType: string;
+  amountDollars: number;
+  memo: string | null;
+  plaidTransactionId: string | null;
+  createdAt: string;
+}
+
+/** Full ledger history for one category, most recent first. Used by the iOS app's category detail screen. */
+export async function getLedgerEntries(categoryId: string): Promise<LedgerEntry[]> {
+  const sql = getSql();
+  const rows = await sql`
+    select id, entry_type, amount_cents, memo, plaid_transaction_id, created_at
+    from budget_ledger_entries
+    where category_id = ${categoryId}
+    order by created_at desc
+  `;
+
+  return rows.map((r) => ({
+    id: r.id as string,
+    entryType: r.entry_type as string,
+    amountDollars: toDollars(r.amount_cents as number),
+    memo: r.memo as string | null,
+    plaidTransactionId: r.plaid_transaction_id as string | null,
+    createdAt: (r.created_at as Date).toISOString?.() ?? (r.created_at as string),
+  }));
+}
+
 export async function listCategories(includeArchived = false): Promise<BudgetCategory[]> {
   const sql = getSql();
   const rows = includeArchived

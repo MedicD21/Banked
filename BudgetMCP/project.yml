@@ -1,0 +1,83 @@
+name: BudgetMCP
+options:
+  bundleIdPrefix: com.dustinschaaf
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: 286LKF859M
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  LinkKit:
+    url: https://github.com/plaid/plaid-link-ios
+    exactVersion: 6.4.0
+
+targets:
+  BudgetMCP:
+    type: application
+    platform: iOS
+    sources:
+      - path: BudgetMCP
+    dependencies:
+      - package: LinkKit
+        product: LinkKit
+    info:
+      path: BudgetMCP/Info.plist
+      properties:
+        CFBundleDisplayName: Budget
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UILaunchScreen: {}
+        ITSAppUsesNonExemptEncryption: false
+        # Local dev endpoint; Release builds should override via a Release-only
+        # Info.plist value or scheme once the app targets a real device build.
+        BudgetAPIURL: "https://budget-mcp.vercel.app"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dustinschaaf.BudgetMCP
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  BudgetMCPUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: BudgetMCPUITests
+    dependencies:
+      - target: BudgetMCP
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dustinschaaf.BudgetMCP.uitests
+        GENERATE_INFOPLIST_FILE: true
+
+schemes:
+  BudgetMCP:
+    build:
+      targets:
+        BudgetMCP: all
+        BudgetMCPUITests: [test]
+    run:
+      config: Debug
+      environmentVariables:
+        - variable: BUDGET_API_URL
+          value: "https://budget-mcp.vercel.app"
+          isEnabled: true
+        - variable: BUDGET_APP_API_TOKEN
+          value: "b10d04e7d2e22f84c77a0a5a20560fff54a4f2e7cb60e1e1e952f26090640568"
+          isEnabled: true
+    test:
+      config: Debug
+      targets:
+        - BudgetMCPUITests
+      environmentVariables:
+        - variable: BUDGET_API_URL
+          value: "https://budget-mcp.vercel.app"
+          isEnabled: true
+        - variable: BUDGET_APP_API_TOKEN
+          value: "b10d04e7d2e22f84c77a0a5a20560fff54a4f2e7cb60e1e1e952f26090640568"
+          isEnabled: true

@@ -6,6 +6,7 @@ import {
   reconcileTransaction,
   getBudgetVsActual,
 } from "../../reconcile/reconcile.js";
+import { getSyncStatus } from "../../plaid/status.js";
 
 export function registerPlaidTools(server: McpServer): void {
   server.registerTool(
@@ -56,15 +57,7 @@ to stay well inside Plaid's API rate limits.`,
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async () => {
-      const sql = getSql();
-      const rows = await sql`
-        select institution_name, status, last_synced_at from plaid_items order by institution_name
-      `;
-      const items = rows.map((r) => ({
-        institutionName: r.institution_name as string | null,
-        status: r.status as string,
-        lastSyncedAt: r.last_synced_at as string | null,
-      }));
+      const items = await getSyncStatus();
       return { content: [{ type: "text", text: JSON.stringify(items, null, 2) }], structuredContent: { items } };
     }
   );
