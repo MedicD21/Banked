@@ -20,11 +20,18 @@ final class CategoryEditorViewModel {
     var name: String
     var allocatedText: String
     var period: BudgetPeriod
+    var hasDueDate: Bool
+    var dueDate: Date
+    var groupName: String
+    var autoAssign: Bool
+    var rollover: Bool
     private(set) var isSaving = false
     private(set) var isDeleting = false
     var error: AppError?
 
     let mode: Mode
+    /// Distinct group names already in use, offered as quick-pick chips.
+    let existingGroups: [String]
     private let apiClient: any APIRequesting
     private let logger = Logger(subsystem: "com.dustinschaaf.BudgetMCP", category: "CategoryEditorViewModel")
 
@@ -36,19 +43,35 @@ final class CategoryEditorViewModel {
         Double(allocatedText.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
-    init(apiClient: any APIRequesting, mode: Mode) {
+    init(apiClient: any APIRequesting, mode: Mode, existingGroups: [String] = []) {
         self.apiClient = apiClient
         self.mode = mode
+        self.existingGroups = existingGroups
 
         switch mode {
         case .create:
             self.name = ""
             self.allocatedText = ""
             self.period = .monthly
+            self.hasDueDate = false
+            self.dueDate = Date()
+            self.groupName = ""
+            self.autoAssign = true
+            self.rollover = false
         case .edit(let category):
             self.name = category.name
             self.allocatedText = String(format: "%.2f", category.allocatedDollars)
             self.period = BudgetPeriod(rawValue: category.period.lowercased()) ?? .monthly
+            if let dueDateString = category.dueDate, let parsed = AppDateFormatting.date(fromPlainDate: dueDateString) {
+                self.hasDueDate = true
+                self.dueDate = parsed
+            } else {
+                self.hasDueDate = false
+                self.dueDate = Date()
+            }
+            self.groupName = category.groupName ?? ""
+            self.autoAssign = category.autoAssign
+            self.rollover = category.rollover
         }
     }
 
@@ -58,10 +81,15 @@ final class CategoryEditorViewModel {
         isSaving = true
         defer { isSaving = false }
 
+        let trimmedGroup = groupName.trimmingCharacters(in: .whitespacesAndNewlines)
         let request = CategoryRequest(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             allocatedDollars: allocatedDollars,
-            period: period.rawValue
+            period: period.rawValue,
+            dueDate: hasDueDate ? AppDateFormatting.plainDateString(from: dueDate) : nil,
+            groupName: trimmedGroup.isEmpty ? nil : trimmedGroup,
+            autoAssign: autoAssign,
+            rollover: rollover
         )
 
         do {

@@ -7,53 +7,105 @@ struct BudgetOverviewView: View {
     var body: some View {
         NavigationStack {
             List {
-                if viewModel.categories.isEmpty && !viewModel.isLoading {
-                    ContentUnavailableView(
-                        "No Categories Yet",
-                        systemImage: "chart.pie",
-                        description: Text("Tap + to create your first budget category.")
+                Section {
+                    BalanceSummaryCard(
+                        availableDollars: viewModel.availableDollars,
+                        assignedDollars: viewModel.assignedDollars,
+                        safeToSpendDollars: viewModel.safeToSpendDollars,
+                        isLoading: viewModel.isLoading
                     )
+                    .listRowInsets(EdgeInsets())
+                }
+                .listRowBackground(Color.clear)
+
+                if viewModel.categories.isEmpty && !viewModel.isLoading {
+                    ContentUnavailableView {
+                        Label("No Categories Yet", systemImage: "chart.pie")
+                    } description: {
+                        Text("Add your first category, or start from a template.")
+                    } actions: {
+                        Button("Browse Templates") { viewModel.showingTemplates = true }
+                            .buttonStyle(.borderedProminent)
+                            .tint(Theme.Colors.accent)
+                    }
                     .listRowBackground(Color.clear)
                 }
 
-                ForEach(viewModel.categories) { category in
-                    NavigationLink {
-                        CategoryDetailView(
-                            viewModel: CategoryDetailViewModel(apiClient: appState.apiClient, category: category),
-                            onCategoryUpdated: { viewModel.upsert($0) },
-                            onCategoryDeleted: { viewModel.remove($0) }
-                        )
-                    } label: {
-                        CategoryRow(category: category)
-                    }
-                    .listRowBackground(Theme.Colors.surface)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            Task { await viewModel.deleteCategory(category) }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                ForEach(viewModel.groupedCategories) { group in
+                    Section(group.name) {
+                        ForEach(group.categories) { category in
+                            NavigationLink {
+                                CategoryDetailView(
+                                    viewModel: CategoryDetailViewModel(apiClient: appState.apiClient, category: category),
+                                    existingGroups: viewModel.existingGroupNames,
+                                    onCategoryUpdated: { viewModel.upsert($0) },
+                                    onCategoryDeleted: { viewModel.remove($0) }
+                                )
+                            } label: {
+                                CategoryRow(category: category)
+                            }
+                            .listRowBackground(Theme.Colors.surface)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    Task { await viewModel.deleteCategory(category) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .disabled(viewModel.deletingCategoryIds.contains(category.id))
+                            }
                         }
-                        .disabled(viewModel.deletingCategoryIds.contains(category.id))
                     }
+                    .headerProminence(.increased)
                 }
             }
             .themedScreenBackground()
             .navigationTitle("Budget")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        viewModel.showingAddCategory = true
+                    Menu {
+                        Button {
+                            viewModel.showingAddCategory = true
+                        } label: {
+                            Label("New Category", systemImage: "plus")
+                        }
+                        Button {
+                            viewModel.showingTemplates = true
+                        } label: {
+                            Label("Browse Templates", systemImage: "square.grid.2x2")
+                        }
                     } label: {
-                        Label("Add Category", systemImage: "plus")
+                        Label("Add", systemImage: "plus")
                     }
+                }
+                ToolbarItem(placement: .secondaryAction) {
+                    Button {
+                        viewModel.showingMoveFunds = true
+                    } label: {
+                        Label("Move Money", systemImage: "arrow.left.arrow.right")
+                    }
+                    .disabled(viewModel.categories.count < 2)
                 }
             }
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
             .sheet(isPresented: $viewModel.showingAddCategory) {
                 CategoryEditorView(
-                    viewModel: CategoryEditorViewModel(apiClient: viewModel.apiClient, mode: .create),
+                    viewModel: CategoryEditorViewModel(apiClient: viewModel.apiClient, mode: .create, existingGroups: viewModel.existingGroupNames),
                     onSave: { viewModel.upsert($0) }
+                )
+            }
+            .sheet(isPresented: $viewModel.showingTemplates) {
+                TemplatesView(
+                    viewModel: TemplatesViewModel(apiClient: viewModel.apiClient),
+                    onApplied: { created in created.forEach { viewModel.upsert($0) } }
+                )
+            }
+            .sheet(isPresented: $viewModel.showingMoveFunds) {
+                MoveFundsView(
+                    viewModel: MoveFundsViewModel(categories: viewModel.categories) { fromId, toId, amount in
+                        await viewModel.moveFunds(fromCategoryId: fromId, toCategoryId: toId, amountDollars: amount)
+                    },
+                    onMoved: {}
                 )
             }
             .alert("Couldn't Load Categories", isPresented: .constant(viewModel.error != nil)) {
@@ -61,6 +113,7 @@ struct BudgetOverviewView: View {
             } message: {
                 Text(viewModel.error?.localizedDescription ?? "")
             }
+            .sensoryFeedback(.impact(weight: .light), trigger: viewModel.categories.count)
         }
     }
 }
@@ -74,14 +127,26 @@ private struct CategoryRow: View {
                 Text(category.name)
                     .font(.headline)
                     .foregroundStyle(Theme.Colors.textPrimary)
+                if category.rollover {
+                    Image(systemName: "arrow.turn.down.right")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.Colors.textTertiary)
+                }
                 Spacer()
                 Text(category.remainingDollars, format: .currency(code: "USD"))
                     .font(.headline)
+                    .fontDesign(.rounded)
+                    .contentTransition(.numericText())
                     .foregroundStyle(category.remainingDollars < 0 ? Theme.Colors.negative : Theme.Colors.textPrimary)
+            }
+
+            if let dueStatus = category.dueStatus {
+                DueDateBadge(status: dueStatus)
             }
 
             ProgressView(value: progress)
                 .tint(category.remainingDollars < 0 ? Theme.Colors.negative : Theme.Colors.accent)
+                .animation(.smooth(duration: 0.5), value: progress)
 
             HStack {
                 Text("\(category.spentDollars, format: .currency(code: "USD")) spent")
@@ -92,6 +157,7 @@ private struct CategoryRow: View {
             .foregroundStyle(Theme.Colors.textSecondary)
         }
         .padding(.vertical, 4)
+        .animation(.smooth(duration: 0.4), value: category.remainingDollars)
     }
 
     private var progress: Double {

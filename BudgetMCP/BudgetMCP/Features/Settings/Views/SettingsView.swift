@@ -41,6 +41,9 @@ struct SettingsView: View {
                 Task { await viewModel.load() }
             }) {
                 LinkBankView(viewModel: LinkBankViewModel(apiClient: appState.apiClient))
+                    .presentationBackground(Theme.Colors.canvas)
+                    .presentationCornerRadius(Theme.Radius.lg)
+                    .presentationDragIndicator(.visible)
             }
             .alert("Couldn't Load Sync Status", isPresented: .constant(viewModel.error != nil)) {
                 Button("OK") { viewModel.dismissError() }
@@ -61,8 +64,7 @@ private struct InstitutionRow: View {
                 Spacer()
                 StatusBadge(status: item.status)
             }
-            if let lastSyncedAt = item.lastSyncedAt, let date = ISO8601DateFormatter.withFractionalSeconds.date(from: lastSyncedAt)
-                ?? ISO8601DateFormatter.standard.date(from: lastSyncedAt) {
+            if let lastSyncedAt = item.lastSyncedAt, let date = AppDateFormatting.date(fromISOTimestamp: lastSyncedAt) {
                 Text("Last synced \(date, format: .relative(presentation: .named))")
                     .font(.caption)
                     .foregroundStyle(Theme.Colors.textSecondary)
@@ -90,20 +92,6 @@ private struct StatusBadge: View {
     var body: some View {
         ThemedBadge(text: status.capitalized, color: color)
     }
-}
-
-private extension ISO8601DateFormatter {
-    nonisolated(unsafe) static let withFractionalSeconds: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    nonisolated(unsafe) static let standard: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }
 
 #Preview {

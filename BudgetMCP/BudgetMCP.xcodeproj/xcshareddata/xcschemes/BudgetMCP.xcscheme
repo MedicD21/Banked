@@ -35,6 +35,20 @@
                ReferencedContainer = "container:BudgetMCP.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "3569E205DF379A4F572649F6"
+               BuildableName = "BudgetMCPWidget.appex"
+               BlueprintName = "BudgetMCPWidget"
+               ReferencedContainer = "container:BudgetMCP.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction

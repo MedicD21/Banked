@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CategoryDetailView: View {
     @State var viewModel: CategoryDetailViewModel
+    var existingGroups: [String] = []
     var onCategoryUpdated: (BudgetCategory) -> Void = { _ in }
     var onCategoryDeleted: (BudgetCategory) -> Void = { _ in }
 
@@ -10,15 +11,55 @@ struct CategoryDetailView: View {
     var body: some View {
         List {
             Section {
-                LabeledContent("Allocated") { Text(viewModel.category.allocatedDollars, format: .currency(code: "USD")) }
-                LabeledContent("Spent") { Text(viewModel.category.spentDollars, format: .currency(code: "USD")) }
+                LabeledContent("Allocated") {
+                    Text(viewModel.category.allocatedDollars, format: .currency(code: "USD"))
+                        .fontDesign(.rounded)
+                }
+                LabeledContent("Spent") {
+                    Text(viewModel.category.spentDollars, format: .currency(code: "USD"))
+                        .fontDesign(.rounded)
+                }
                 LabeledContent("Remaining") {
                     Text(viewModel.category.remainingDollars, format: .currency(code: "USD"))
+                        .fontDesign(.rounded)
+                        .contentTransition(.numericText())
                         .foregroundStyle(viewModel.category.remainingDollars < 0 ? Theme.Colors.negative : Theme.Colors.textPrimary)
                 }
-                LabeledContent("Period", value: viewModel.category.period.capitalized)
+                LabeledContent("Period", value: BudgetPeriod(rawValue: viewModel.category.period.lowercased())?.displayName ?? viewModel.category.period.capitalized)
+
+                if let group = viewModel.category.groupName, !group.isEmpty {
+                    LabeledContent("Group", value: group)
+                }
+
+                if let dueStatus = viewModel.category.dueStatus {
+                    LabeledContent("Due Date") {
+                        DueDateBadge(status: dueStatus)
+                    }
+                }
             }
             .listRowBackground(Theme.Colors.surface)
+            .animation(.smooth(duration: 0.4), value: viewModel.category.remainingDollars)
+
+            if viewModel.category.autoAssign || viewModel.category.rollover {
+                Section {
+                    if viewModel.category.autoAssign {
+                        Label("Auto-assigns each period", systemImage: "repeat")
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    if viewModel.category.rollover {
+                        Label("Rolls over unspent balance", systemImage: "arrow.turn.down.right")
+                            .foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                }
+                .listRowBackground(Theme.Colors.surface)
+            }
+
+            if viewModel.entries.count >= 2 {
+                Section("Spending Trend") {
+                    SpendingTrendChart(entries: viewModel.entries)
+                }
+                .listRowBackground(Theme.Colors.surface)
+            }
 
             Section("Ledger History") {
                 if viewModel.entries.isEmpty && !viewModel.isLoading {
@@ -48,7 +89,7 @@ struct CategoryDetailView: View {
         .task { await viewModel.load() }
         .sheet(isPresented: $viewModel.showingEditor) {
             CategoryEditorView(
-                viewModel: CategoryEditorViewModel(apiClient: viewModel.apiClient, mode: .edit(viewModel.category)),
+                viewModel: CategoryEditorViewModel(apiClient: viewModel.apiClient, mode: .edit(viewModel.category), existingGroups: existingGroups),
                 onSave: { updated in
                     viewModel.apply(updated)
                     onCategoryUpdated(updated)
@@ -77,41 +118,15 @@ private struct LedgerEntryRow: View {
                     .font(.body)
                 Spacer()
                 Text(entry.amountDollars, format: .currency(code: "USD"))
+                    .fontDesign(.rounded)
                     .foregroundStyle(entry.amountDollars < 0 ? Theme.Colors.negative : Theme.Colors.positive)
             }
-            Text(entry.createdAt, format: .dateTime.month().day().year().hour().minute())
+            Text(isoTimestamp: entry.createdAt, format: .dateTime.month().day().year().hour().minute())
                 .font(.caption)
                 .foregroundStyle(Theme.Colors.textSecondary)
         }
         .padding(.vertical, 2)
     }
-}
-
-private extension Text {
-    init(_ isoString: String, format: Date.FormatStyle) {
-        if let date = ISO8601DateFormatter.withFractionalSeconds.date(from: isoString)
-            ?? ISO8601DateFormatter.standard.date(from: isoString) {
-            self.init(date, format: format)
-        } else {
-            self.init(isoString)
-        }
-    }
-}
-
-private extension ISO8601DateFormatter {
-    // Read-only after creation, so safe to share across isolation domains despite
-    // ISO8601DateFormatter not being Sendable.
-    nonisolated(unsafe) static let withFractionalSeconds: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    nonisolated(unsafe) static let standard: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
 }
 
 #Preview {
