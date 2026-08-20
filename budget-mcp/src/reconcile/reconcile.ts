@@ -31,12 +31,18 @@ export async function getUncategorizedTransactions(limit = 25): Promise<Uncatego
 
   return rows.map((r) => ({
     transactionId: r.transaction_id as string,
-    date: r.date as string,
+    date: toDateOnlyString(r.date),
     merchantName: r.merchant_name as string | null,
     name: r.name as string,
     plaidCategory: r.category as string | null,
     amountDollars: toDollars(r.amount_cents as number),
   }));
+}
+
+/** Postgres `date` columns come back from the Neon driver as JS Date objects, not strings. */
+function toDateOnlyString(value: unknown): string {
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  return value as string;
 }
 
 /**

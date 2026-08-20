@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
+import { CountryCode } from "plaid";
 import { exchangePublicToken, getPlaidClient } from "../../src/plaid/client.js";
 import { getSql } from "../../src/db/client.js";
 import { encryptSecret } from "../../src/security/crypto.js";
@@ -32,7 +33,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 
     const client = getPlaidClient();
     const itemResponse = await client.itemGet({ access_token: accessToken });
-    const institutionName = itemResponse.data.item.institution_id ?? null;
+    const institutionId = itemResponse.data.item.institution_id ?? null;
+
+    let institutionName = institutionId;
+    if (institutionId) {
+      try {
+        const institutionResponse = await client.institutionsGetById({
+          institution_id: institutionId,
+          country_codes: [CountryCode.Us],
+        });
+        institutionName = institutionResponse.data.institution.name;
+      } catch {
+        // Fall back to the raw institution_id if the lookup fails — still
+        // usable, just less friendly.
+      }
+    }
 
     const encryptedAccessToken = encryptSecret(accessToken);
 

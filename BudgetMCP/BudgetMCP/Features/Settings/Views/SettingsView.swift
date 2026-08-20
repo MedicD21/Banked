@@ -33,7 +33,9 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
-            .sheet(isPresented: $viewModel.showingLinkBank) {
+            .sheet(isPresented: $viewModel.showingLinkBank, onDismiss: {
+                Task { await viewModel.load() }
+            }) {
                 LinkBankView(viewModel: LinkBankViewModel(apiClient: appState.apiClient))
             }
             .alert("Couldn't Load Sync Status", isPresented: .constant(viewModel.error != nil)) {

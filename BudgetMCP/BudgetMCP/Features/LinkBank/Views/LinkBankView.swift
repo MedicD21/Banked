@@ -109,9 +109,11 @@ private struct PlaidLinkPresenter: UIViewControllerRepresentable {
 
         private func presentLink() {
             var configuration = LinkTokenConfiguration(token: linkToken) { [weak self] success in
+                PlaidLinkOAuthCoordinator.activeHandler = nil
                 self?.onSuccess(success.publicToken)
             }
             configuration.onExit = { [weak self] _ in
+                PlaidLinkOAuthCoordinator.activeHandler = nil
                 self?.onExit()
             }
 
@@ -119,12 +121,21 @@ private struct PlaidLinkPresenter: UIViewControllerRepresentable {
             switch result {
             case .success(let handler):
                 self.handler = handler
+                PlaidLinkOAuthCoordinator.activeHandler = handler
                 handler.open(presentUsing: .viewController(self))
             case .failure:
                 onExit()
             }
         }
     }
+}
+
+/// Holds the in-flight Plaid `Handler` so the app-level `onOpenURL` (see
+/// `BudgetMCPApp`) can hand an OAuth redirect back to it. Real institutions
+/// (Chase, Bank of America, etc.) require this redirect round-trip in
+/// Development/Production; Sandbox test institutions don't use it.
+enum PlaidLinkOAuthCoordinator {
+    static var activeHandler: Handler?
 }
 
 #Preview {

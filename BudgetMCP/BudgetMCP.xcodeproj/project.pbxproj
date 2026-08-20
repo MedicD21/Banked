@@ -59,6 +59,8 @@
 		9CEA44F6A90EE7A2602CF5BA /* AppError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppError.swift; sourceTree = "<group>"; };
 		9F8982232CFBFFEC78C359FE /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		A266ACC7CDD7191A65A66AD9 /* BudgetMCPUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetMCPUITests.swift; sourceTree = "<group>"; };
+		D6F1A2B3C4D5E6F708192A3B /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		D6F1A2B3C4D5E6F708192A3C /* Secrets.example.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.example.xcconfig; sourceTree = "<group>"; };
 		A8E642C9A96600857E961902 /* LinkBankView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkBankView.swift; sourceTree = "<group>"; };
 		AA4C09109783A13EE1F63FB8 /* BudgetMCP.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BudgetMCP.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1E07FA544955E6D984EF930 /* APIEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIEndpoint.swift; sourceTree = "<group>"; };
@@ -208,8 +210,18 @@
 			isa = PBXGroup;
 			children = (
 				A266ACC7CDD7191A65A66AD9 /* BudgetMCPUITests.swift */,
+				D6F1A2B3C4D5E6F708192A3D /* Config */,
 			);
 			path = BudgetMCPUITests;
+			sourceTree = "<group>";
+		};
+		D6F1A2B3C4D5E6F708192A3D /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				D6F1A2B3C4D5E6F708192A3B /* Secrets.xcconfig */,
+				D6F1A2B3C4D5E6F708192A3C /* Secrets.example.xcconfig */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		7AE8FA21E69697AEC1028EC8 /* App */ = {
@@ -465,9 +477,11 @@
 /* Begin XCBuildConfiguration section */
 		32BD04B78230CD95451666EA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D6F1A2B3C4D5E6F708192A3B /* Secrets.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BUDGET_APP_API_TOKEN = "$(BUDGET_APP_API_TOKEN)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -625,9 +639,11 @@
 		};
 		EA86E3B360F1823927EED3DA /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D6F1A2B3C4D5E6F708192A3B /* Secrets.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_BUDGET_APP_API_TOKEN = "$(BUDGET_APP_API_TOKEN)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
