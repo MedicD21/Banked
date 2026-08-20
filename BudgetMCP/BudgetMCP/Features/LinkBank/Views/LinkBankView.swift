@@ -134,6 +134,7 @@ private struct PlaidLinkPresenter: UIViewControllerRepresentable {
 /// `BudgetMCPApp`) can hand an OAuth redirect back to it. Real institutions
 /// (Chase, Bank of America, etc.) require this redirect round-trip in
 /// Development/Production; Sandbox test institutions don't use it.
+@MainActor
 enum PlaidLinkOAuthCoordinator {
     static var activeHandler: Handler?
 }

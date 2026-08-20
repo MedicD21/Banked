@@ -18,7 +18,7 @@ function getEnv(name: string): string {
 }
 
 let cachedClient: PlaidApi | undefined;
-let cachedClientEnv: string | undefined;
+let cachedClientEnv: keyof typeof PlaidEnvironments | undefined;
 
 export function getPlaidClient(): PlaidApi {
   const plaidEnv = (process.env.PLAID_ENV ?? "sandbox") as keyof typeof PlaidEnvironments;

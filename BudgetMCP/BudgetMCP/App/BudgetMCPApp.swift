@@ -11,7 +11,7 @@ struct BudgetMCPApp: App {
                 .onOpenURL { url in
                     // Resumes Plaid Link after an institution's OAuth hand-off
                     // redirects back into the app via the "budgetmcp://" scheme.
-                    PlaidLinkOAuthCoordinator.activeHandler?.continue(from: url)
+                    PlaidLinkOAuthCoordinator.activeHandler?.resumeAfterTermination(from: url)
                 }
         }
     }

@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "286LKF859M.com.dustinschaaf.BudgetMCP",
+        "paths": ["/plaid-redirect"]
+      }
+    ]
+  }
+}

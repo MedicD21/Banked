@@ -25,6 +25,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
     const linkToken = await createLinkToken(userId);
     res.status(200).json({ linkToken });
   } catch (err) {
-    res.status(500).json({ error: err instanceof Error ? err.message : "Failed to create link token" });
+    const plaidError = (err as { response?: { data?: unknown } })?.response?.data;
+    res.status(500).json({
+      error: err instanceof Error ? err.message : "Failed to create link token",
+      plaidError,
+    });
   }
 }
