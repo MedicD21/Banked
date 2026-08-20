@@ -2,6 +2,9 @@ import Foundation
 
 enum APIEndpoint {
     case categories
+    case createCategory(CategoryRequest)
+    case updateCategory(categoryId: String, CategoryRequest)
+    case deleteCategory(categoryId: String)
     case ledger(categoryId: String)
     case uncategorizedTransactions(limit: Int)
     case reconcile(ReconcileRequest)
@@ -11,8 +14,10 @@ enum APIEndpoint {
 
     var path: String {
         switch self {
-        case .categories:
+        case .categories, .createCategory:
             return "/api/app/categories"
+        case .updateCategory(let categoryId, _), .deleteCategory(let categoryId):
+            return "/api/app/categories/\(categoryId)"
         case .ledger(let categoryId):
             return "/api/app/categories/\(categoryId)/ledger"
         case .uncategorizedTransactions:
@@ -32,13 +37,19 @@ enum APIEndpoint {
         switch self {
         case .categories, .ledger, .uncategorizedTransactions, .syncStatus:
             return "GET"
-        case .reconcile, .linkToken, .exchangeToken:
+        case .createCategory, .reconcile, .linkToken, .exchangeToken:
             return "POST"
+        case .updateCategory:
+            return "PATCH"
+        case .deleteCategory:
+            return "DELETE"
         }
     }
 
     var body: (any Encodable)? {
         switch self {
+        case .createCategory(let req): return req
+        case .updateCategory(_, let req): return req
         case .reconcile(let req): return req
         case .exchangeToken(let req): return req
         default: return nil
@@ -53,6 +64,13 @@ enum APIEndpoint {
             return nil
         }
     }
+}
+
+/// Shared payload shape for both creating and updating a category.
+struct CategoryRequest: Encodable, Sendable {
+    let name: String
+    let allocatedDollars: Double
+    let period: String
 }
 
 struct ReconcileRequest: Encodable, Sendable {

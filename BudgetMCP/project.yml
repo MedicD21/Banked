@@ -35,6 +35,10 @@ targets:
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen: {}
         ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLName: com.dustinschaaf.BudgetMCP.plaid-oauth
+            CFBundleURLSchemes:
+              - budgetmcp
         # Local dev endpoint; Release builds should override via a Release-only
         # Info.plist value or scheme once the app targets a real device build.
         BudgetAPIURL: "https://budget-mcp.vercel.app"

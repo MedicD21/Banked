@@ -13,6 +13,7 @@ struct ReconcileView: View {
                         systemImage: "checkmark.circle",
                         description: Text("No uncategorized transactions — everything is reconciled.")
                     )
+                    .listRowBackground(Color.clear)
                 }
 
                 ForEach(viewModel.transactions) { transaction in
@@ -22,8 +23,10 @@ struct ReconcileView: View {
                         TransactionRow(transaction: transaction)
                     }
                     .buttonStyle(.plain)
+                    .listRowBackground(Theme.Colors.surface)
                 }
             }
+            .themedScreenBackground()
             .navigationTitle("Reconcile")
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
@@ -59,11 +62,12 @@ private struct TransactionRow: View {
                     .font(.body)
                 Text(transaction.date)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer()
             Text(transaction.amountDollars, format: .currency(code: "USD"))
                 .font(.headline)
+                .foregroundStyle(Theme.Colors.textPrimary)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
@@ -84,13 +88,16 @@ private struct CategoryPickerSheet: View {
                 } label: {
                     HStack {
                         Text(category.name)
+                            .foregroundStyle(Theme.Colors.textPrimary)
                         Spacer()
                         Text(category.remainingDollars, format: .currency(code: "USD"))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.textSecondary)
                     }
                 }
                 .buttonStyle(.plain)
+                .listRowBackground(Theme.Colors.surface)
             }
+            .themedScreenBackground()
             .navigationTitle(transaction.merchantName ?? transaction.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -99,9 +106,11 @@ private struct CategoryPickerSheet: View {
                 }
             }
         }
+        .themedRoot()
     }
 }
 
 #Preview {
     ReconcileView(viewModel: ReconcileViewModel(apiClient: PreviewAPIClient()))
+        .themedRoot()
 }

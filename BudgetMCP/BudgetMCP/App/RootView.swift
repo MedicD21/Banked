@@ -14,5 +14,8 @@ struct RootView: View {
             SettingsView(viewModel: SettingsViewModel(apiClient: appState.apiClient))
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
+        .toolbarBackground(Theme.Colors.surfaceElevated, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        .themedRoot()
     }
 }

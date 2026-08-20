@@ -10,26 +10,30 @@ struct SettingsView: View {
                 Section("Linked Institutions") {
                     if viewModel.items.isEmpty && !viewModel.isLoading {
                         Text("No linked accounts yet.")
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.Colors.textSecondary)
                     }
 
                     ForEach(viewModel.items) { item in
                         InstitutionRow(item: item)
                     }
                 }
+                .listRowBackground(Theme.Colors.surface)
 
                 Section {
                     Button("Link a Bank Account") {
                         viewModel.showingLinkBank = true
                     }
                 }
+                .listRowBackground(Theme.Colors.surface)
 
                 Section {
                     Text("Balances and transactions sync once a day via a scheduled job. There's no manual sync — this keeps the app well within Plaid's rate limits.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.textSecondary)
                 }
+                .listRowBackground(Color.clear)
             }
+            .themedScreenBackground()
             .navigationTitle("Settings")
             .refreshable { await viewModel.load() }
             .task { await viewModel.load() }
@@ -61,11 +65,11 @@ private struct InstitutionRow: View {
                 ?? ISO8601DateFormatter.standard.date(from: lastSyncedAt) {
                 Text("Last synced \(date, format: .relative(presentation: .named))")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             } else {
                 Text("Never synced")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
         }
         .padding(.vertical, 2)
@@ -77,19 +81,14 @@ private struct StatusBadge: View {
 
     var color: Color {
         switch status {
-        case "active": return .green
-        case "error": return .red
-        default: return .secondary
+        case "active": return Theme.Colors.positive
+        case "error": return Theme.Colors.negative
+        default: return Theme.Colors.textSecondary
         }
     }
 
     var body: some View {
-        Text(status.capitalized)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(color.opacity(0.15), in: Capsule())
-            .foregroundStyle(color)
+        ThemedBadge(text: status.capitalized, color: color)
     }
 }
 
@@ -110,4 +109,5 @@ private extension ISO8601DateFormatter {
 #Preview {
     SettingsView(viewModel: SettingsViewModel(apiClient: PreviewAPIClient()))
         .environment(AppState())
+        .themedRoot()
 }

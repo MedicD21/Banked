@@ -11,14 +11,15 @@ struct LinkBankView: View {
 
             Image(systemName: "building.columns.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Theme.Colors.accent)
 
             Text("Link a Bank Account")
                 .font(.title2.bold())
+                .foregroundStyle(Theme.Colors.textPrimary)
 
             Text("Connect a real account via Plaid. Balances and transactions sync once a day and are only used to reconcile against your fake budget — nothing here can move real money.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
@@ -53,10 +54,13 @@ struct LinkBankView: View {
             case .success:
                 Label("Account Linked", systemImage: "checkmark.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Theme.Colors.positive)
             }
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.Colors.canvas)
+        .themedRoot()
         .alert("Couldn't Link Account", isPresented: .constant(viewModel.error != nil)) {
             Button("OK") { viewModel.dismissError() }
         } message: {

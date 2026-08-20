@@ -1,36 +1,64 @@
 import SwiftUI
 
 struct CategoryDetailView: View {
-    let category: BudgetCategory
     @State var viewModel: CategoryDetailViewModel
+    var onCategoryUpdated: (BudgetCategory) -> Void = { _ in }
+    var onCategoryDeleted: (BudgetCategory) -> Void = { _ in }
+
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         List {
             Section {
-                LabeledContent("Allocated") { Text(category.allocatedDollars, format: .currency(code: "USD")) }
-                LabeledContent("Spent") { Text(category.spentDollars, format: .currency(code: "USD")) }
+                LabeledContent("Allocated") { Text(viewModel.category.allocatedDollars, format: .currency(code: "USD")) }
+                LabeledContent("Spent") { Text(viewModel.category.spentDollars, format: .currency(code: "USD")) }
                 LabeledContent("Remaining") {
-                    Text(category.remainingDollars, format: .currency(code: "USD"))
-                        .foregroundStyle(category.remainingDollars < 0 ? .red : .primary)
+                    Text(viewModel.category.remainingDollars, format: .currency(code: "USD"))
+                        .foregroundStyle(viewModel.category.remainingDollars < 0 ? Theme.Colors.negative : Theme.Colors.textPrimary)
                 }
-                LabeledContent("Period", value: category.period.capitalized)
+                LabeledContent("Period", value: viewModel.category.period.capitalized)
             }
+            .listRowBackground(Theme.Colors.surface)
 
             Section("Ledger History") {
                 if viewModel.entries.isEmpty && !viewModel.isLoading {
                     Text("No activity yet.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.Colors.textSecondary)
                 }
 
                 ForEach(viewModel.entries) { entry in
                     LedgerEntryRow(entry: entry)
                 }
             }
+            .listRowBackground(Theme.Colors.surface)
         }
-        .navigationTitle(category.name)
+        .themedScreenBackground()
+        .navigationTitle(viewModel.category.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    viewModel.showingEditor = true
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
+            }
+        }
         .refreshable { await viewModel.load() }
         .task { await viewModel.load() }
+        .sheet(isPresented: $viewModel.showingEditor) {
+            CategoryEditorView(
+                viewModel: CategoryEditorViewModel(apiClient: viewModel.apiClient, mode: .edit(viewModel.category)),
+                onSave: { updated in
+                    viewModel.apply(updated)
+                    onCategoryUpdated(updated)
+                },
+                onDelete: {
+                    onCategoryDeleted(viewModel.category)
+                    dismiss()
+                }
+            )
+        }
         .alert("Couldn't Load History", isPresented: .constant(viewModel.error != nil)) {
             Button("OK") { viewModel.dismissError() }
         } message: {
@@ -49,11 +77,11 @@ private struct LedgerEntryRow: View {
                     .font(.body)
                 Spacer()
                 Text(entry.amountDollars, format: .currency(code: "USD"))
-                    .foregroundStyle(entry.amountDollars < 0 ? .red : .green)
+                    .foregroundStyle(entry.amountDollars < 0 ? Theme.Colors.negative : Theme.Colors.positive)
             }
             Text(entry.createdAt, format: .dateTime.month().day().year().hour().minute())
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.Colors.textSecondary)
         }
         .padding(.vertical, 2)
     }
@@ -89,8 +117,11 @@ private extension ISO8601DateFormatter {
 #Preview {
     NavigationStack {
         CategoryDetailView(
-            category: BudgetCategory(id: "1", name: "Groceries", allocatedDollars: 500, spentDollars: 210.5, remainingDollars: 289.5, period: "monthly"),
-            viewModel: CategoryDetailViewModel(apiClient: PreviewAPIClient(), categoryId: "1")
+            viewModel: CategoryDetailViewModel(
+                apiClient: PreviewAPIClient(),
+                category: BudgetCategory(id: "1", name: "Groceries", allocatedDollars: 500, spentDollars: 210.5, remainingDollars: 289.5, period: "monthly")
+            )
         )
     }
+    .themedRoot()
 }

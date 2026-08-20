@@ -31,6 +31,14 @@ struct PreviewAPIClient: APIRequesting {
                 { "institutionName": "Chase", "status": "active", "lastSyncedAt": "2026-08-17T07:00:00Z" }
             ] }
             """.utf8)
+        case .createCategory(let req), .updateCategory(_, let req):
+            json = Data("""
+            { "id": "1", "name": "\(req.name)", "allocatedDollars": \(req.allocatedDollars), "spentDollars": 0, "remainingDollars": \(req.allocatedDollars), "period": "\(req.period)" }
+            """.utf8)
+        case .deleteCategory:
+            json = Data("""
+            { "success": true }
+            """.utf8)
         default:
             json = Data("{}".utf8)
         }

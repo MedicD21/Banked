@@ -13,6 +13,26 @@ struct CategoryListResponse: Decodable, Sendable {
     let categories: [BudgetCategory]
 }
 
+enum BudgetPeriod: String, CaseIterable, Identifiable, Sendable {
+    case weekly
+    case monthly
+    case yearly
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        case .yearly: return "Yearly"
+        }
+    }
+}
+
+struct CategoryDeleteResponse: Decodable, Sendable {
+    let success: Bool
+}
+
 struct LedgerEntry: Codable, Identifiable, Sendable, Equatable {
     let id: String
     let entryType: String
